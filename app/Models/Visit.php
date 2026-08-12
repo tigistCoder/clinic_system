@@ -31,8 +31,38 @@ class Visit extends Model
         return $this->hasMany(LabRequest::class);
     }
 
+    public function labResults()
+    {
+        return $this->hasMany(LabResult::class);
+    }
+
     public function prescriptions()
     {
         return $this->hasMany(Prescription::class);
+    }
+
+    /**
+     * Check completion triggers and update visit_status to 'completed' or 'in_progress'.
+     * Clean, direct, non-looping query check.
+     */
+    public function checkAndUpdateCompletionStatus(): bool
+    {
+        $hasPendingPrescriptions = Prescription::where('visit_id', $this->id)
+            ->where('status', '!=', 'dispensed')
+            ->exists();
+
+        $hasPendingLab = LabRequest::where('visit_id', $this->id)
+            ->where('status', '!=', 'completed')
+            ->exists();
+
+        $hasDiagnosis = !empty(trim($this->consultation?->final_dx ?? ''));
+
+        $targetStatus = (!$hasPendingPrescriptions && !$hasPendingLab && $hasDiagnosis) ? 'completed' : 'in_progress';
+
+        if ($this->visit_status !== $targetStatus) {
+            $this->update(['visit_status' => $targetStatus]);
+        }
+
+        return $targetStatus === 'completed';
     }
 }

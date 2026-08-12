@@ -27,7 +27,9 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username' => ['required', 'string'],
+            'username' => ['nullable', 'string'],
+            'email'    => ['nullable', 'string'],
+            'login'    => ['nullable', 'string'],
             'password' => ['required', 'string'],
         ];
     }
@@ -41,12 +43,39 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        // በ email ፋንታ በ 'username' እንዲያጣራ ተደርጓል
-        if (! Auth::attempt($this->only('username', 'password'), $this->boolean('remember'))) {
+        $loginInput = trim($this->input('email') ?? $this->input('username') ?? $this->input('login') ?? '');
+
+        if (empty($loginInput)) {
+            throw ValidationException::withMessages([
+                'email' => 'Please enter your email or username.',
+            ]);
+        }
+
+        $fieldType = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        $credentials = [
+            $fieldType => $loginInput,
+            'password'  => $this->input('password'),
+        ];
+
+        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'username' => trans('auth.failed'),
+                'email' => trans('auth.failed'),
+            ]);
+        }
+
+        $user = Auth::user();
+
+        if ($user && ($user->status !== 'active' || (isset($user->is_active) && !$user->is_active))) {
+            Auth::guard('web')->logout();
+
+            $this->session()->invalidate();
+            $this->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'email' => 'Your account is currently inactive. Please contact the administrator.',
             ]);
         }
 
@@ -55,8 +84,6 @@ class LoginRequest extends FormRequest
 
     /**
      * Ensure the login request is not rate limited.
-     *
-     * @throws \Illuminate\Validation\ValidationException
      */
     public function ensureIsNotRateLimited(): void
     {
@@ -69,7 +96,7 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'username' => trans('auth.throttle', [
+            'email' => trans('auth.throttle', [
                 'seconds' => $seconds,
                 'minutes' => ceil($seconds / 60),
             ]),
@@ -81,6 +108,7 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('username')).'|'.$this->ip());
+        $loginInput = trim($this->input('email') ?? $this->input('username') ?? $this->input('login') ?? '');
+        return Str::transliterate(Str::lower($loginInput).'|'.$this->ip());
     }
 }

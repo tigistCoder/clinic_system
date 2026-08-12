@@ -39,5 +39,9 @@ class LabRequest extends Model
     {
         return $this->belongsTo(User::class, 'lab_tech_id');
     }
-}
 
+    public function labResults()
+    {
+        return $this->hasMany(LabResult::class);
+    }
+}

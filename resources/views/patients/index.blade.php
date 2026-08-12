@@ -17,13 +17,19 @@
         </button>
     </div>
 
-    @if(session('success') || session('error'))
-    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <!-- Alert Messages -->
+    @if(session('success') || session('error') || $errors->any())
+    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-1">
         @if(session('success'))
-            <p class="text-sm text-emerald-700 font-semibold">{{ session('success') }}</p>
+            <p class="text-sm text-emerald-700 font-semibold">✓ {{ session('success') }}</p>
         @endif
         @if(session('error'))
-            <p class="text-sm text-rose-700 font-semibold">{{ session('error') }}</p>
+            <p class="text-sm text-rose-700 font-semibold">✕ {{ session('error') }}</p>
+        @endif
+        @if($errors->any())
+            @foreach($errors->all() as $error)
+                <p class="text-sm text-rose-700 font-semibold">✕ {{ $error }}</p>
+            @endforeach
         @endif
     </div>
     @endif
@@ -145,14 +151,14 @@
                 @csrf
                 <div>
                     <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Full Name</label>
-                    <input type="text" name="name" value="{{ old('name') }}" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    <input type="text" name="name" value="{{ old('name') }}" pattern="[A-Za-z\s]+" title="Patient name must contain letters only." placeholder="e.g. Abebe Kebede" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                     @error('name') <p class="text-rose-600 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Age</label>
-                        <input type="number" name="age" value="{{ old('age') }}" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Age (Years)</label>
+                        <input type="number" name="age" value="{{ old('age') }}" min="0" max="120" maxlength="3" placeholder="0 - 120" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                         @error('age') <p class="text-rose-600 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
@@ -167,13 +173,13 @@
 
                 <div>
                     <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Phone Number</label>
-                    <input type="text" name="phone" value="{{ old('phone') }}" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    <input type="tel" name="phone" value="{{ old('phone') }}" pattern="[0-9]{9,15}" title="Phone number must contain 9 to 15 digits." placeholder="e.g. 0911123456" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                     @error('phone') <p class="text-rose-600 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Address</label>
-                    <input type="text" name="address" value="{{ old('address') }}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    <input type="text" name="address" value="{{ old('address') }}" pattern="[A-Za-z\s,]+" title="Address must contain letters only, numbers are not allowed." minlength="2" maxlength="255" placeholder="e.g. Kebele, Assosa" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                     @error('address') <p class="text-rose-600 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
@@ -185,7 +191,7 @@
         </div>
     </div>
 
-    <!-- QUICK VISIT POP-UP MODAL (NEWLY ADDED) -->
+    <!-- QUICK VISIT POP-UP MODAL -->
     <div x-show="openVisitModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" x-cloak>
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4" @click.away="openVisitModal = false">
             

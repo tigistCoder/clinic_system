@@ -15,6 +15,7 @@ class Prescription extends Model
         'dosage',
         'frequency',
         'duration',
+        'quantity',
         'status',
     ];
 

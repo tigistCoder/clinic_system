@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Medicine;
 use App\Models\Patient;
 use App\Models\Visit;
 use Illuminate\Http\Request;
@@ -14,9 +15,10 @@ class VisitController extends Controller
             'urgency_status' => 'nullable|in:normal,emergency',
         ]);
 
+        
         $visit = $patient->visits()->create([
             'urgency_status' => $validated['urgency_status'] ?? 'normal',
-            'visit_status' => 'triage',
+            'visit_status'   => 'in_progress',
         ]);
 
         return redirect()->route('visits.show', $visit)
@@ -25,8 +27,10 @@ class VisitController extends Controller
 
     public function show(Visit $visit)
     {
-        $visit->load(['patient', 'vitalSign', 'consultation', 'labRequests', 'prescriptions.medicine']);
+        $visit->load(['patient', 'vitalSign', 'consultation', 'labRequests', 'labResults.technician', 'prescriptions.medicine']);
+        $visit->checkAndUpdateCompletionStatus();
 
-        return view('visits.show', compact('visit'));
+        $medicines = Medicine::with('purchases')->orderBy('name')->get();
+        return view('visits.show', compact('visit', 'medicines'));
     }
 }

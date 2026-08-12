@@ -21,14 +21,14 @@
 
             <div>
                 <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Full Name</label>
-                <input type="text" name="name" value="{{ old('name', $patient->full_name) }}" required class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                <input type="text" name="name" value="{{ old('name', $patient->full_name) }}" pattern="[A-Za-z\s]+" title="Patient name must contain letters only." placeholder="e.g. Abebe Kebede" required class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                 @error('name') <p class="text-rose-600 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Age</label>
-                    <input type="number" name="age" value="{{ old('age', $patient->age) }}" required class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Age (Years)</label>
+                    <input type="number" name="age" value="{{ old('age', $patient->age) }}" min="0" max="120" maxlength="3" placeholder="0 - 120" required class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                     @error('age') <p class="text-rose-600 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
@@ -43,13 +43,13 @@
 
             <div>
                 <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Phone Number</label>
-                <input type="text" name="phone" value="{{ old('phone', $patient->phone_number) }}" required class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                <input type="tel" name="phone" value="{{ old('phone', $patient->phone_number) }}" pattern="[0-9]{9,15}" title="Phone number must contain 9 to 15 digits." placeholder="e.g. 0911123456" required class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                 @error('phone') <p class="text-rose-600 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Address</label>
-                <input type="text" name="address" value="{{ old('address', $patient->address) }}" class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                <input type="text" name="address" value="{{ old('address', $patient->address) }}" pattern="[A-Za-z\s,]+" title="Address must contain letters only, numbers are not allowed." minlength="2" maxlength="255" placeholder="e.g. Kebele, Assosa" required class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                 @error('address') <p class="text-rose-600 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 
