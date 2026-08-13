@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('content')
 <div class="space-y-6">
@@ -13,10 +13,12 @@
                 <p class="mt-1 text-sm text-slate-500">{{ $patient->age }} yrs • {{ ucfirst($patient->gender) }} • {{ $patient->phone_number }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
+                @if(!auth()->user()?->hasRole(['nurse', 'doctor', 'lab', 'lab_tech', 'pharmacy', 'pharmacist']))
                 <form action="{{ route('visits.store', $patient) }}" method="POST">
                     @csrf
                     <button type="submit" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">Start new visit</button>
                 </form>
+                @endif
                 <a href="{{ route('patients.index') }}" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Back to patients</a>
             </div>
         </div>

@@ -27,9 +27,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username' => ['nullable', 'string'],
-            'email'    => ['nullable', 'string'],
-            'login'    => ['nullable', 'string'],
+            'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
         ];
     }
@@ -43,19 +41,9 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        $loginInput = trim($this->input('email') ?? $this->input('username') ?? $this->input('login') ?? '');
-
-        if (empty($loginInput)) {
-            throw ValidationException::withMessages([
-                'email' => 'Please enter your email or username.',
-            ]);
-        }
-
-        $fieldType = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-
         $credentials = [
-            $fieldType => $loginInput,
-            'password'  => $this->input('password'),
+            'email' => $this->input('email'),
+            'password' => $this->input('password'),
         ];
 
         if (! Auth::attempt($credentials, $this->boolean('remember'))) {
@@ -108,7 +96,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        $loginInput = trim($this->input('email') ?? $this->input('username') ?? $this->input('login') ?? '');
-        return Str::transliterate(Str::lower($loginInput).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->input('email', '')).'|'.$this->ip());
     }
 }

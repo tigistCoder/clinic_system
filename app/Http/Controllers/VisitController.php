@@ -11,6 +11,10 @@ class VisitController extends Controller
 {
     public function store(Request $request, Patient $patient)
     {
+        if (auth()->user()?->hasRole(['nurse', 'doctor', 'lab', 'lab_tech', 'pharmacy', 'pharmacist'])) {
+            abort(403, 'Starting visits is restricted for this role.');
+        }
+
         $validated = $request->validate([
             'urgency_status' => 'nullable|in:normal,emergency',
         ]);

@@ -50,7 +50,7 @@
 
 
                 <!-- Patients -->
-                @if(in_array(auth()->user()->role, ['admin', 'reception', 'doctor', 'nurse']))
+                @if(in_array(auth()->user()->role, ['admin', 'reception', 'doctor', 'nurse', 'lab', 'lab_tech', 'pharmacy', 'pharmacist']))
                     <a
                         href="{{ route('patients.index') }}"
                         class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition
@@ -94,8 +94,8 @@
                 @endif
 
 
-                <!-- Pharmacy -->
-                @if(in_array(auth()->user()->role, ['admin', 'pharmacy', 'doctor']))
+                <!-- Pharmacy / Inventory -->
+                @if(!auth()->user()?->hasRole(['doctor', 'nurse', 'lab', 'lab_tech', 'reception', 'receptionist']))
                     <a
                         href="{{ route('medicines.index') }}"
                         class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition

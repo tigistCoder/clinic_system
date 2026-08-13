@@ -66,4 +66,17 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
         $response->assertRedirect('/login');
     }
+
+    public function test_user_email_must_be_unique(): void
+    {
+        User::factory()->create([
+            'email' => 'unique@example.com',
+        ]);
+
+        $this->expectException(\Illuminate\Database\QueryException::class);
+
+        User::factory()->create([
+            'email' => 'unique@example.com',
+        ]);
+    }
 }

@@ -32,9 +32,9 @@
             @csrf
 
             <div>
-                <label for="login" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Username or Email</label>
-                <input id="login" type="text" name="login" value="{{ old('login') }}" required autofocus
-                    placeholder="Enter username or email"
+                <label for="email" class="block text-xs font-semibold uppercase text-slate-600 mb-1">Email Address</label>
+                <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
+                    placeholder="Enter email address"
                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-blue-500 focus:outline-none transition">
             </div>
 

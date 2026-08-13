@@ -33,4 +33,9 @@ class UserFactory extends Factory
             'status' => 'active',
         ];
     }
+
+    public function unverified(): static
+    {
+        return $this->state(fn (array $attributes) => []);
+    }
 }

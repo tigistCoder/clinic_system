@@ -20,6 +20,17 @@
             ? implode(', ', $visit->consultation->physical_exam)
             : ($visit->consultation?->physical_exam ?? '')
     );
+
+    $user = auth()->user();
+    $isDoctor = $user && $user->hasRole(['admin', 'doctor']);
+    $isNurseRole = $user && $user->hasRole(['admin', 'nurse']);
+    $isLabRole = $user && $user->hasRole(['admin', 'lab', 'lab_tech']);
+
+    $isNurse = $user && $user->hasRole('nurse');
+    $isReception = $user && $user->hasRole(['reception', 'receptionist']);
+    $isLabTech = $user && $user->hasRole(['lab', 'lab_tech']);
+    $isPharmacist = $user && $user->hasRole(['pharmacy', 'pharmacist']);
+    $isRestrictedRole = $isNurse || $isReception || $isLabTech || $isPharmacist;
 @endphp
 
 {{-- Modal transition styles --}}
@@ -42,7 +53,7 @@
 <div class="space-y-6">
 
     {{-- ═══════════════════ Flash Messages ═══════════════════ --}}
-    @if(session('success') || session('error') || (isset($errors) && $errors->any()))
+    @if(session('success') || session('error') || (isset($errors) && (($errors instanceof \Illuminate\Support\ViewErrorBag && $errors->any()) || (is_array($errors) && !empty($errors)))))
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-1">
             @if(session('success'))
                 <p class="text-sm font-semibold text-emerald-700">✓ {{ session('success') }}</p>
@@ -50,9 +61,13 @@
             @if(session('error'))
                 <p class="text-sm font-semibold text-rose-700">✕ {{ session('error') }}</p>
             @endif
-            @if(isset($errors) && $errors->any())
+            @if(isset($errors) && $errors instanceof \Illuminate\Support\ViewErrorBag && $errors->any())
                 @foreach($errors->all() as $error)
                     <p class="text-sm font-semibold text-rose-700">✕ {{ $error }}</p>
+                @endforeach
+            @elseif(isset($errors) && is_array($errors))
+                @foreach($errors as $error)
+                    <p class="text-sm font-semibold text-rose-700">✕ {{ is_array($error) ? implode(', ', $error) : $error }}</p>
                 @endforeach
             @endif
         </div>
@@ -81,43 +96,61 @@
                 <a href="{{ route('patients.show', $visit->patient) }}" class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
                     ← Patient Profile
                 </a>
+
+                {{-- + Add Vitals (Nurse & Admin only - Hidden for Doctor) --}}
+                @if(in_array(auth()->user()?->role, ['admin', 'nurse']))
                 <button type="button" onclick="openModal('vitalModal')" class="rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700">
                     + Add Vitals
                 </button>
+                @endif
+
+                {{-- Doctor Actions --}}
+                @if(in_array(auth()->user()?->role, ['admin', 'doctor']))
                 <button type="button" onclick="openModal('doctorModal')" class="rounded-2xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700">
                     + Doctor Note
                 </button>
                 <button type="button" onclick="openModal('labModal')" class="rounded-2xl bg-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-violet-700">
                     + Order Lab
                 </button>
+                @endif
+
+                {{-- + Enter Lab Result (Lab Tech & Admin only - Hidden for Doctor) --}}
+                @if(in_array(auth()->user()?->role, ['admin', 'lab', 'lab_tech']))
                 <button type="button" onclick="openModal('labResultModal')" class="rounded-2xl bg-teal-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-700">
                     + Enter Lab Result
                 </button>
+                @endif
+
+                {{-- + Prescribe Medicine --}}
+                @if(in_array(auth()->user()?->role, ['admin', 'doctor']))
                 <button type="button" onclick="openModal('prescriptionModal')" class="rounded-2xl bg-amber-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-700">
                     + Prescribe Medicine
                 </button>
+                @endif
 
-                @if($prerequisitesMet)
-                    @if(in_array(auth()->user()->role, ['admin', 'doctor']))
+                {{-- Final Diagnosis --}}
+                @if(in_array(auth()->user()?->role, ['admin', 'doctor']))
+                    @if($prerequisitesMet)
                         <button type="button" onclick="openModal('finalDxModal')" class="rounded-2xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700">
                             ✓ Final Diagnosis
                         </button>
+                    @else
+                        <button type="button" onclick="openModal('prerequisiteModal')" class="rounded-2xl bg-rose-50 border border-rose-200 px-4 py-2.5 text-xs font-bold text-rose-700 shadow-sm transition hover:bg-rose-100 flex items-center gap-1.5">
+                            🔒 Final Diagnosis (Locked)
+                        </button>
                     @endif
-                @else
-                    <button type="button" onclick="openModal('prerequisiteModal')" class="rounded-2xl bg-rose-50 border border-rose-200 px-4 py-2.5 text-xs font-bold text-rose-700 shadow-sm transition hover:bg-rose-100 flex items-center gap-1.5">
-                        🔒 Final Diagnosis (Locked)
-                    </button>
                 @endif
             </div>
         </div>
     </div>
 
     {{-- ═══════════════════ Main Layout Grid ═══════════════════ --}}
-    <div class="grid gap-6 lg:grid-cols-3">
+    <div class="grid gap-6 {{ $isRestrictedRole ? 'grid-cols-1' : 'lg:grid-cols-3' }}">
 
-        {{-- Left Column (2 Cols) --}}
-        <div class="space-y-6 lg:col-span-2">
+        {{-- Left Column --}}
+        <div class="space-y-6 {{ $isRestrictedRole ? 'col-span-1' : 'lg:col-span-2' }}">
 
+            @if(!$isReception && !$isLabTech && !$isPharmacist)
             {{-- ── Vitals Card ── --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div class="mb-4 flex items-center justify-between">
@@ -150,11 +183,13 @@
                     </div>
                 @else
                     <div class="rounded-2xl border border-dashed border-slate-300 p-4 text-center text-sm text-slate-500">
-                        No vital signs recorded yet. Click "+ Add Vitals" to record nurse readings.
+                        No vital signs recorded yet.
                     </div>
                 @endif
             </div>
+            @endif
 
+            @if(!$isNurse && !$isReception && !$isLabTech && !$isPharmacist)
             {{-- ── Doctor Consultation Notes Card ── --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -191,7 +226,9 @@
                     </div>
                 @endif
             </div>
+            @endif
 
+            @if(!$isNurse && !$isPharmacist)
             {{-- ── Laboratory Tests & Billing Card ── --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -248,7 +285,7 @@
                                         </td>
                                         <td class="px-4 py-3 text-right whitespace-nowrap">
                                             @if($labReq->payment_status !== 'paid')
-                                                @if(in_array(auth()->user()->role, ['admin', 'receptionist', 'cashier', 'doctor']))
+                                                @if(in_array(auth()->user()->role, ['admin', 'reception', 'receptionist', 'cashier']))
                                                     <form action="{{ route('lab_requests.pay', $labReq) }}" method="POST" class="inline-block" onsubmit="return confirm('Mark payment of ETB {{ number_format($labReq->price, 2) }} as received for {{ $labReq->test_name }}?');">
                                                         @csrf
                                                         <button type="submit" class="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700">
@@ -273,7 +310,9 @@
                     </div>
                 @endif
             </div>
+            @endif
 
+            @if(!$isNurse && !$isReception && !$isPharmacist)
             {{-- ── Laboratory Results & Findings Card ── --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -315,15 +354,18 @@
                     </div>
                 @else
                     <div class="rounded-2xl border border-dashed border-slate-300 p-4 text-center text-sm text-slate-500">
-                        No laboratory results recorded yet. Click "+ Enter Lab Result" to record test findings.
+                        No laboratory results recorded yet.
                     </div>
                 @endif
             </div>
+            @endif
         </div>
 
+        @if(!$isNurse && !$isReception && !$isLabTech)
         {{-- Right Column (1 Col) --}}
         <div class="space-y-6">
 
+            @if(!$isPharmacist)
             {{-- ── Final Diagnosis Card ── --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -347,12 +389,11 @@
                             @if(in_array(auth()->user()->role, ['admin', 'doctor']))
                                 <button type="button" onclick="openModal('finalDxModal')" class="ml-1 font-bold text-indigo-600 hover:underline">+ Record Final Diagnosis</button>
                             @endif
-                        @else
-                            <button type="button" onclick="openModal('prerequisiteModal')" class="ml-1 font-bold text-rose-600 hover:underline">View Missing Steps</button>
                         @endif
                     </div>
                 @endif
             </div>
+            @endif
 
             {{-- ── Prescriptions Card ── --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
@@ -368,9 +409,6 @@
                         <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
                             {{ $visit->prescriptions->count() }} {{ Str::plural('Item', $visit->prescriptions->count()) }}
                         </span>
-                        <button type="button" onclick="openModal('prescriptionModal')" class="rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-amber-700">
-                            + Prescribe
-                        </button>
                     </div>
                 </div>
 
@@ -433,13 +471,11 @@
                 @else
                     <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 p-6 text-center">
                         <p class="text-sm font-medium text-slate-500">No prescriptions recorded yet.</p>
-                        <button type="button" onclick="openModal('prescriptionModal')" class="mt-2 text-xs font-bold text-amber-600 hover:underline">
-                            + Prescribe Medication
-                        </button>
                     </div>
                 @endif
             </div>
         </div>
+        @endif
     </div>
 
 
@@ -447,6 +483,7 @@
          MODALS
     ═══════════════════════════════════════════════════════════════ --}}
 
+    @if(!$isReception)
     {{-- 1. Vital Signs Modal --}}
     <div id="vitalModal" class="modal-backdrop">
         <div class="modal-panel w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
@@ -504,7 +541,9 @@
             </form>
         </div>
     </div>
+    @endif
 
+    @if($isDoctor)
     {{-- 2. Doctor Consultation Modal --}}
     <div id="doctorModal" class="modal-backdrop">
         <div class="modal-panel w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
@@ -540,12 +579,14 @@
             </form>
         </div>
     </div>
+    @endif
 
     {{-- 3. Order Lab Test Modal --}}
+    @if($isDoctor)
     <div id="labModal" class="modal-backdrop">
         <div class="modal-panel w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
             <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 class="text-lg font-bold text-slate-900">+ Order Laboratory Test</h3>
+                <h3 class="text-lg font-bold text-slate-900">Order Laboratory Test</h3>
                 <button type="button" onclick="closeModal('labModal')" class="text-slate-400 hover:text-slate-600">✕</button>
             </div>
             <form data-url="{{ route('lab_requests.store', $visit) }}" data-modal="labModal" onsubmit="submitModalForm(event)" class="space-y-4">
@@ -567,8 +608,10 @@
             </form>
         </div>
     </div>
+    @endif
 
     {{-- 4. Enter Lab Result Modal --}}
+    @if($isLabRole)
     <div id="labResultModal" class="modal-backdrop">
         <div class="modal-panel w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
             <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
@@ -607,8 +650,10 @@
             </form>
         </div>
     </div>
+    @endif
 
     {{-- 5. Prescribe Medication Modal --}}
+    @if($isDoctor)
     <div id="prescriptionModal" class="modal-backdrop">
         <div class="modal-panel w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
             <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
@@ -656,8 +701,10 @@
             </form>
         </div>
     </div>
+    @endif
 
     {{-- 6. Final Diagnosis Modal --}}
+    @if($isDoctor)
     <div id="finalDxModal" class="modal-backdrop">
         <div class="modal-panel w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
             <div class="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
@@ -680,8 +727,10 @@
             </form>
         </div>
     </div>
+    @endif
 
     {{-- 7. Prerequisite Warning Modal --}}
+    @if($isDoctor)
     <div id="prerequisiteModal" class="modal-backdrop">
         <div class="modal-panel w-full max-w-lg rounded-3xl border border-rose-200 bg-white p-6 shadow-2xl">
             <div class="mb-3 flex items-center justify-between border-b border-slate-100 pb-3">
@@ -705,6 +754,7 @@
             </div>
         </div>
     </div>
+    @endif
 
 </div>
 

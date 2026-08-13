@@ -13,7 +13,44 @@
         </div>
     </div>
 
-    <!-- Top Grid (4 Metric Cards) -->
+    <!-- Top Grid (Stat Cards) -->
+    @if(auth()->user()?->hasRole(['lab', 'lab_tech']))
+    <!-- 3 Lab Stat Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- 1. የሚጠበቁ የላብ ምርመራዎች (Pending Lab Requests) -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">የሚጠበቁ የላብ ምርመራዎች</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $stats['pending_lab_requests'] ?? 0 }}</h3>
+            </div>
+            <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                <i data-lucide="clock" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- 2. የተጠናቀቁ የላብ ምርመራዎች (Completed Lab Tests) -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">የተጠናቀቁ የላብ ምርመራዎች</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $stats['completed_lab_requests'] ?? 0 }}</h3>
+            </div>
+            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                <i data-lucide="check-circle" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- 3. አጠቃላይ የላብራቶሪ ምርመራዎች (Total Lab Requests) -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">አጠቃላይ የላብራቶሪ ምርመራዎች</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $stats['total_lab_tests'] ?? 0 }}</h3>
+            </div>
+            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                <i data-lucide="flask-conical" class="w-6 h-6"></i>
+            </div>
+        </div>
+    </div>
+    @else
     <div class="grid gap-4 md:grid-cols-4">
         <!-- Card 1: TOTAL PATIENTS -->
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -71,6 +108,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <!-- Main Table Area -->
     <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">

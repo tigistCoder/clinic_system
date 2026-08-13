@@ -9,6 +9,161 @@
 
     <!-- Info Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        @if(auth()->user()?->hasRole(['lab', 'lab_tech']))
+        <!-- 1. የሚጠበቁ የላብ ምርመራዎች (Pending Lab Requests) -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">የሚጠበቁ የላብ ምርመራዎች</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $pendingLabRequestsCount }}</h3>
+            </div>
+            <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                <i data-lucide="clock" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- 2. የተጠናቀቁ የላብ ምርመራዎች (Completed Lab Tests) -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">የተጠናቀቁ የላብ ምርመራዎች</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $completedLabRequestsCount }}</h3>
+            </div>
+            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                <i data-lucide="check-circle" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- 3. አጠቃላይ የላብራቶሪ ምርመራዎች (Total Lab Requests) -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">አጠቃላይ የላብራቶሪ ምርመራዎች</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $todayLabRequestsCount }}</h3>
+            </div>
+            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                <i data-lucide="flask-conical" class="w-6 h-6"></i>
+            </div>
+        </div>
+        @elseif(auth()->user()?->hasRole('nurse'))
+        <!-- 1. የዛሬ ጉብኝቶች (Today's Visits) -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">የዛሬ ጉብኝቶች</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $todayVisits->count() }}</h3>
+            </div>
+            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                <i data-lucide="calendar" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- 2. የሚጠበቁ ቫይታሎች (Pending Vitals) -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">የሚጠበቁ ቫይታሎች</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $pendingVitalsCount }}</h3>
+            </div>
+            <div class="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                <i data-lucide="activity" class="w-6 h-6"></i>
+            </div>
+        </div>
+        @elseif(auth()->user()?->hasRole('doctor'))
+        <!-- 1. Today's Patients -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's Patients</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $todayVisits->count() }}</h3>
+            </div>
+            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                <i data-lucide="users" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- 2. Today's Pending Consultations -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's Pending Consultations</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $pendingConsultationsCount }}</h3>
+            </div>
+            <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                <i data-lucide="stethoscope" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- 3. Today's Lab Results Ready -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's Lab Results Ready</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $labResultsReadyCount }}</h3>
+            </div>
+            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                <i data-lucide="flask-conical" class="w-6 h-6"></i>
+            </div>
+        </div>
+        @elseif(auth()->user()?->hasRole(['reception', 'receptionist']))
+        <!-- 1. Today's Visits -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's Visits</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $todayVisits->count() }}</h3>
+            </div>
+            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                <i data-lucide="calendar" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- 2. Total Patients -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Patients</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $totalPatientsCount }}</h3>
+            </div>
+            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                <i data-lucide="users" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- 3. Pending Lab Payments -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pending Lab Payments</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $pendingLabPaymentsCount }}</h3>
+            </div>
+            <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                <i data-lucide="credit-card" class="w-6 h-6"></i>
+            </div>
+        </div>
+        @elseif(auth()->user()?->hasRole(['pharmacy', 'pharmacist']))
+        <!-- 1. Today's Pending Prescriptions -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's Pending Prescriptions</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $pendingPrescriptionsCount }}</h3>
+            </div>
+            <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                <i data-lucide="pill" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- 2. Today's Dispensed Prescriptions -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's Dispensed Prescriptions</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $dispensedPrescriptionsCount }}</h3>
+            </div>
+            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+            </div>
+        </div>
+
+        <!-- 3. Low Stock Medicines -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Low Stock Medicines</span>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $lowStockMedicinesCount }}</h3>
+            </div>
+            <div class="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+        </div>
+        @else
         <!-- 1. የዛሬ ታካሚዎች -->
         <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
             <div>
@@ -41,6 +196,7 @@
                 <i data-lucide="flask-conical" class="w-6 h-6"></i>
             </div>
         </div>
+        @endif
     </div>
 
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden p-4">

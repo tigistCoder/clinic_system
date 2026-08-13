@@ -18,6 +18,9 @@ class MedicineController extends Controller
      */
     public function index(Request $request)
     {
+        if (auth()->user()?->hasRole(['doctor', 'nurse'])) {
+            abort(403, 'Access to inventory is restricted.');
+        }
         // 1. Single query to fetch all medicines with eager-loaded purchases
         $rawMedicines = Medicine::with(['purchases' => function ($q) {
             $q->orderBy('expiry_date', 'asc');

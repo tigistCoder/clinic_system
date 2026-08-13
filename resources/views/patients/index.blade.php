@@ -11,10 +11,19 @@
         </div>
         
         <!-- Register Button (Opens Dialogue Box) -->
+        @if(auth()->user()?->hasRole(['nurse', 'lab', 'lab_tech', 'pharmacy', 'pharmacist']))
+        {{-- Hidden for Nurse, Lab Tech and Pharmacists --}}
+        @elseif(auth()->user()?->hasRole('doctor'))
+        <button type="button" disabled title="Registration restricted for Doctors" class="bg-slate-100 text-slate-400 px-4 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 cursor-not-allowed opacity-60">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            Register New Patient
+        </button>
+        @else
         <button @click="openModal = true" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 shadow-sm transition">
             <i data-lucide="user-plus" class="w-4 h-4"></i>
             Register New Patient
         </button>
+        @endif
     </div>
 
     <!-- Alert Messages -->
@@ -93,13 +102,17 @@
                     <td class="p-4 text-right space-x-2">
                         
                         <!-- 1. QUICK VISIT BUTTON (POP-UP) -->
+                        @if(auth()->user()?->hasRole(['doctor', 'nurse', 'lab', 'lab_tech', 'pharmacy', 'pharmacist']))
+                        {{-- Hidden for Doctor, Nurse, Lab Tech & Pharmacist --}}
+                        @else
                         <button 
-                            @click="activePatient = {{ json_encode($patient) }}; openVisitModal = true" 
+                            @click="activePatient = {{ json_encode(['id' => $patient->id, 'card_number' => $patient->card_number ?? $patient->id, 'full_name' => $patient->full_name]) }}; openVisitModal = true" 
                             class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-lg transition"
                         >
                             <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
                             Visit
                         </button>
+                        @endif
 
                         <!-- 2. DETAIL BUTTON -->
                         <a href="{{ route('patients.show', $patient) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition">
@@ -107,6 +120,7 @@
                             Detail
                         </a>
 
+                        @if(!auth()->user()?->hasRole(['doctor', 'nurse', 'lab', 'lab_tech', 'pharmacy', 'pharmacist']))
                         <!-- 3. EDIT BUTTON -->
                         <a href="{{ route('patients.edit', $patient) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg transition">
                             <i data-lucide="edit" class="w-3.5 h-3.5"></i>
@@ -122,6 +136,7 @@
                                 Delete
                             </button>
                         </form>
+                        @endif
 
                     </td>
                 </tr>
@@ -138,6 +153,7 @@
     </div>
 
     <!-- DIALOGUE BOX / MODAL (FOR NEW PATIENT) -->
+    @if(!auth()->user()?->hasRole(['nurse', 'doctor', 'lab', 'lab_tech', 'pharmacy', 'pharmacist']))
     <div x-show="openModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" x-cloak>
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4" @click.away="openModal = false">
             <div class="flex justify-between items-center border-b pb-3">
@@ -190,8 +206,10 @@
             </form>
         </div>
     </div>
+    @endif
 
     <!-- QUICK VISIT POP-UP MODAL -->
+    @if(!auth()->user()?->hasRole(['nurse', 'doctor', 'pharmacy', 'pharmacist']))
     <div x-show="openVisitModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" x-cloak>
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4" @click.away="openVisitModal = false">
             
@@ -227,6 +245,7 @@
 
         </div>
     </div>
+    @endif
 
 </div>
 

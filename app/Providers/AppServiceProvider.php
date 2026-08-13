@@ -19,6 +19,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Support\Facades\Blade::directive('role', function ($expression) {
+            return "<?php if(auth()->check() && auth()->user()->hasRole({$expression})): ?>";
+        });
+
+        \Illuminate\Support\Facades\Blade::directive('endrole', function () {
+            return '<?php endif; ?>';
+        });
+
+        \Illuminate\Support\Facades\Blade::directive('unlessrole', function ($expression) {
+            return "<?php if(auth()->check() && !auth()->user()->hasRole({$expression})): ?>";
+        });
+
+        \Illuminate\Support\Facades\Blade::directive('endunlessrole', function () {
+            return '<?php endif; ?>';
+        });
     }
 }

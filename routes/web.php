@@ -37,8 +37,8 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/staff/{user}', [StaffController::class, 'destroy'])->name('staff.destroy');
     });
 
-    // Receptionist Actions (Patients, Visits, Medical Records)
-    Route::middleware('role:admin,reception,doctor,nurse')->group(function () {
+    // Receptionist & Staff Actions (Patients, Visits, Medical Records)
+    Route::middleware('role:admin,reception,doctor,nurse,lab,lab_tech,pharmacy,pharmacist')->group(function () {
         Route::get('/patients', [PatientController::class, 'index'])->name('patients.index');
         Route::get('/patients/create', [PatientController::class, 'create'])->name('patients.create');
         Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
@@ -76,13 +76,17 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/visits/{visit}/lab-results', [LabResultController::class, 'store'])->name('lab_results.store');
     });
 
-    // Pharmacist & Inventory Actions (Medicine Management & Prescription Dispensing)
+    // Pharmacist & Inventory Actions (Medicine Management)
     Route::middleware('role:admin,pharmacy,pharmacist')->group(function () {
         Route::get('/medicines', [MedicineController::class, 'index'])->name('medicines.index');
         Route::post('/medicines', [MedicineController::class, 'store'])->name('medicines.store');
         Route::post('/medicines/quick-store', [MedicineController::class, 'quickStore'])->name('medicines.quick_store');
         Route::put('/medicines/{medicine}', [MedicineController::class, 'update'])->name('medicines.update');
         Route::delete('/medicines/{medicine}', [MedicineController::class, 'destroy'])->name('medicines.destroy');
+    });
+
+    // Prescription Dispensing (Pharmacist, Pharmacy, Admin & Doctor)
+    Route::middleware('role:admin,pharmacy,pharmacist,doctor')->group(function () {
         Route::post('/prescriptions/{prescription}/dispense', [PrescriptionController::class, 'dispense'])->name('prescriptions.dispense');
     });
 

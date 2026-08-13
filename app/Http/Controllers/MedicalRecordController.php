@@ -15,21 +15,21 @@ class MedicalRecordController extends Controller
      */
     public function index(Request $request)
     {
-        // Top 4 Metrics (Calculated for current month)
+        // Top Metrics
         $stats = [
-            'total_patients'     => Patient::whereMonth('created_at', now()->month)
+            'total_patients'         => Patient::whereMonth('created_at', now()->month)
                                         ->whereYear('created_at', now()->year)
                                         ->count(),
-            'total_visits'       => Visit::whereMonth('created_at', now()->month)
+            'total_visits'           => Visit::whereMonth('created_at', now()->month)
                                         ->whereYear('created_at', now()->year)
                                         ->count(),
-            'total_monthly_sold' => Prescription::where('status', 'dispensed')
+            'total_monthly_sold'     => Prescription::where('status', 'dispensed')
                                         ->whereMonth('updated_at', now()->month)
                                         ->whereYear('updated_at', now()->year)
                                         ->sum('quantity'),
-            'total_lab_tests'    => LabRequest::whereMonth('created_at', now()->month)
-                                        ->whereYear('created_at', now()->year)
-                                        ->count(),
+            'total_lab_tests'        => LabRequest::count(),
+            'pending_lab_requests'   => LabRequest::whereIn('status', ['pending', 'pending_payment', 'paid_pending_test'])->count(),
+            'completed_lab_requests' => LabRequest::where('status', 'completed')->count(),
         ];
 
         // Clinical Visit Records Query

@@ -36,7 +36,7 @@ class PatientController extends Controller
 
     public function index(Request $request)
     {
-        $query = Patient::query();
+        $query = Patient::query()->with('latestVisit');
 
         if ($request->filled('search')) {
             $search = trim($request->search);
@@ -56,6 +56,10 @@ class PatientController extends Controller
 
     public function store(Request $request)
     {
+        if (auth()->user()?->hasRole(['nurse', 'doctor', 'lab', 'lab_tech', 'pharmacy', 'pharmacist'])) {
+            abort(403, 'Patient registration is restricted for this role.');
+        }
+
         $validated = $request->validate([
             'name'    => ['required', 'string', 'regex:/^[a-zA-Z\s]+$/', 'max:255'],
             'age'     => ['required', 'integer', 'min:0', 'max:120', 'digits_between:1,3'],
