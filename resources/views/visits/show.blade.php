@@ -31,6 +31,35 @@
     $isLabTech = $user && $user->hasRole(['lab', 'lab_tech']);
     $isPharmacist = $user && $user->hasRole(['pharmacy', 'pharmacist']);
     $isRestrictedRole = $isNurse || $isReception || $isLabTech || $isPharmacist;
+
+    $rxData = [
+        'visit_id' => $visit->id,
+        'date' => date('M d, Y - h:i A'),
+        'patient_name' => $visit->patient->name ?? 'N/A',
+        'card_number' => $visit->patient->card_number ?? '-',
+        'gender' => ucfirst($visit->patient->gender ?? '-'),
+        'age' => $visit->patient->age ?? '-',
+        'phone' => $visit->patient->phone ?? '-',
+        'doctor_name' => $visit->consultation?->doctor?->name ?? auth()->user()?->name ?? 'Attending Doctor',
+        'diagnosis' => $visit->consultation?->final_dx ?? $visit->consultation?->provisional_dx ?? 'General Medical Consultation',
+        'vitals' => $visit->vitalSign ? [
+            'bp' => ($visit->vitalSign->systolic_bp ?? '-') . '/' . ($visit->vitalSign->diastolic_bp ?? '-') . ' mmHg',
+            'pulse' => ($visit->vitalSign->pulse_rate ?? '-') . ' bpm',
+            'temp' => ($visit->vitalSign->temperature ?? '-') . ' °C',
+            'weight' => ($visit->vitalSign->weight ?? '-') . ' kg',
+            'spo2' => ($visit->vitalSign->spo2 ?? '-') . ' %',
+        ] : null,
+        'items' => $visit->prescriptions->map(function($p) {
+            return [
+                'name' => $p->medicine->name ?? 'Medication Item',
+                'generic' => $p->medicine->generic_name ?? '',
+                'dosage' => $p->dosage,
+                'frequency' => $p->frequency,
+                'duration' => $p->duration,
+                'quantity' => $p->quantity,
+            ];
+        })->values()->all(),
+    ];
 @endphp
 
 {{-- Modal transition styles --}}
@@ -125,6 +154,13 @@
                 @if(in_array(auth()->user()?->role, ['admin', 'doctor']))
                 <button type="button" onclick="openModal('prescriptionModal')" class="rounded-2xl bg-amber-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-700">
                     + Prescribe Medicine
+                </button>
+                @endif
+
+                {{-- 🖨️ Print Prescription --}}
+                @if($visit->prescriptions->isNotEmpty())
+                <button type="button" onclick="printPrescriptionSlip()" class="rounded-2xl bg-slate-800 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-900 flex items-center gap-1.5">
+                    🖨️ Print Prescription
                 </button>
                 @endif
 
@@ -453,6 +489,11 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
+                        @if($visit->prescriptions->isNotEmpty())
+                        <button type="button" onclick="printPrescriptionSlip()" class="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700">
+                            🖨️ Print Slip
+                        </button>
+                        @endif
                         <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
                             {{ $visit->prescriptions->count() }} {{ Str::plural('Item', $visit->prescriptions->count()) }}
                         </span>
@@ -937,6 +978,154 @@
     'use strict';
 
     var CSRF_TOKEN = @json(csrf_token());
+
+    // ──────────── Standalone Prescription Window Printer ────────────
+
+    window.printPrescriptionSlip = function() {
+        var data = @json($rxData);
+        if (!data.items || data.items.length === 0) {
+            alert('No prescriptions available to print.');
+            return;
+        }
+
+        var win = window.open('', '_blank', 'width=850,height=900,top=100,left=100');
+        if (!win) {
+            alert('Please allow popups for this site to print the prescription.');
+            return;
+        }
+
+        var itemsHtml = '';
+        data.items.forEach(function(item, idx) {
+            itemsHtml += '<tr style="border-bottom: 1px solid #e2e8f0;">' +
+                '<td style="padding: 10px; text-align: center; font-weight: bold; color: #64748b;">' + (idx + 1) + '</td>' +
+                '<td style="padding: 10px;">' +
+                    '<strong style="color: #0f172a; font-size: 13px;">' + item.name + '</strong>' +
+                    (item.generic ? '<div style="font-size: 10px; color: #64748b; font-style: italic;">Generic: ' + item.generic + '</div>' : '') +
+                '</td>' +
+                '<td style="padding: 10px; color: #334155; font-weight: 600;">' + item.dosage + '</td>' +
+                '<td style="padding: 10px; color: #334155;">' + item.frequency + '</td>' +
+                '<td style="padding: 10px; color: #334155;">' + item.duration + '</td>' +
+                '<td style="padding: 10px; text-align: center; font-weight: bold; color: #0f172a; background-color: #fef3c7;">' + item.quantity + '</td>' +
+            '</tr>';
+        });
+
+        var vitalsHtml = '';
+        if (data.vitals) {
+            vitalsHtml = '<div style="margin-top: 8px; font-size: 11px; color: #475569;">' +
+                '<strong style="color: #64748b; text-transform: uppercase;">Vitals Summary:</strong> ' +
+                'BP: <strong>' + data.vitals.bp + '</strong> | Pulse: <strong>' + data.vitals.pulse + '</strong> | Temp: <strong>' + data.vitals.temp + '</strong> | Weight: <strong>' + data.vitals.weight + '</strong>' +
+            '</div>';
+        }
+
+        var html = '<!DOCTYPE html><html><head>' +
+            '<title>Prescription Slip #' + data.visit_id + '</title>' +
+            '<meta charset="utf-8">' +
+            '<style>' +
+                '@page { size: A4 portrait; margin: 15mm; }' +
+                'body { font-family: system-ui, -apple-system, sans-serif; color: #0f172a; background: #fff; margin: 0; padding: 20px; line-height: 1.4; }' +
+                '.rx-container { max-width: 800px; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 12px; padding: 30px; box-sizing: border-box; }' +
+                '.header-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border-bottom: 2px solid #0f172a; padding-bottom: 15px; }' +
+                '.patient-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px; }' +
+                '.items-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 12px; border: 1px solid #e2e8f0; }' +
+                '.items-table th { background: #f1f5f9; padding: 10px; text-align: left; font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; border-bottom: 2px solid #cbd5e1; }' +
+                '.advice-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; font-size: 11px; color: #1e3a8a; margin-bottom: 30px; }' +
+                '.footer-grid { display: table; width: 100%; margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 20px; }' +
+                '.footer-col { display: table-cell; width: 50%; vertical-align: top; font-size: 11px; }' +
+                '@media print { body { padding: 0; } .rx-container { border: none; padding: 0; } }' +
+            '</style>' +
+        '</head><body>' +
+            '<div class="rx-container">' +
+                '<table class="header-table"><tr>' +
+                    '<td style="vertical-align: top;">' +
+                        '<div style="display: flex; align-items: center;">' +
+                            '<div style="width: 44px; height: 44px; background: #047857; color: white; border-radius: 10px; text-align: center; line-height: 44px; font-size: 22px; font-weight: bold; display: inline-block;">⚕️</div>' +
+                            '<div style="display: inline-block; vertical-align: top; margin-left: 12px;">' +
+                                '<h1 style="font-size: 20px; font-weight: 900; margin: 0; color: #0f172a; text-transform: uppercase; letter-spacing: -0.5px;">HOPE CARE MEDICAL CENTER</h1>' +
+                                '<div style="font-size: 12px; font-weight: 600; color: #475569;">Specialty Medical Clinic & Diagnostic Center</div>' +
+                                '<div style="font-size: 11px; color: #64748b; margin-top: 2px;">Bole Road, Addis Ababa, Ethiopia • Tel: +251 911 234 567</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</td>' +
+                    '<td style="vertical-align: top; text-align: right;">' +
+                        '<div style="background: #fef3c7; color: #78350f; border: 1px solid #fde68a; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 6px; display: inline-block; text-transform: uppercase;">Official Prescription</div>' +
+                        '<div style="font-size: 12px; font-weight: bold; margin-top: 6px; color: #334155;">Rx Ref: <span style="font-family: monospace;">#RX-' + data.visit_id + '</span></div>' +
+                        '<div style="font-size: 11px; color: #64748b; margin-top: 2px;">Date: ' + data.date + '</div>' +
+                    '</td>' +
+                '</tr></table>' +
+
+                '<div class="patient-box">' +
+                    '<table style="width: 100%; border-collapse: collapse; font-size: 12px;"><tr>' +
+                        '<td style="width: 50%; vertical-align: top;">' +
+                            '<div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase;">PATIENT NAME</div>' +
+                            '<div style="font-size: 14px; font-weight: 800; color: #0f172a; margin-top: 2px;">' + data.patient_name + '</div>' +
+                            '<div style="margin-top: 8px;">' +
+                                '<span style="font-size: 10px; font-weight: 800; color: #64748b;">CARD #: </span><strong style="color: #334155;">' + data.card_number + '</strong>' +
+                                ' &nbsp;|&nbsp; ' +
+                                '<span style="font-size: 10px; font-weight: 800; color: #64748b;">AGE/GENDER: </span><strong style="color: #334155;">' + data.age + ' Yrs / ' + data.gender + '</strong>' +
+                            '</div>' +
+                        '</td>' +
+                        '<td style="width: 50%; vertical-align: top;">' +
+                            '<div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase;">DIAGNOSIS & PHYSICIAN</div>' +
+                            '<div style="font-size: 13px; font-weight: 700; color: #b45309; margin-top: 2px;">' + data.diagnosis + '</div>' +
+                            '<div style="font-size: 11px; color: #475569; margin-top: 2px;">Doctor: <strong>Dr. ' + data.doctor_name + '</strong></div>' +
+                            vitalsHtml +
+                        '</td>' +
+                    '</tr></table>' +
+                '</div>' +
+
+                '<div style="margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px;">' +
+                    '<span style="font-size: 28px; font-weight: 900; font-family: Georgia, serif; font-style: italic; color: #0f172a;">℞</span>' +
+                    '<span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #0f172a; margin-left: 8px;">PRESCRIBED MEDICATIONS</span>' +
+                '</div>' +
+
+                '<table class="items-table"><thead><tr>' +
+                    '<th style="width: 30px; text-align: center;">#</th>' +
+                    '<th>Medication Name</th>' +
+                    '<th>Dosage Strength</th>' +
+                    '<th>Frequency</th>' +
+                    '<th>Duration</th>' +
+                    '<th style="text-align: center;">Total Qty</th>' +
+                '</tr></thead><tbody>' + itemsHtml + '</tbody></table>' +
+
+                '<div class="advice-box">' +
+                    '<div style="font-weight: 800; text-transform: uppercase; font-size: 10px; color: #1d4ed8; margin-bottom: 4px;">Special Patient Instructions & Advice:</div>' +
+                    '<ul style="margin: 0; padding-left: 18px; line-height: 1.5;">' +
+                        '<li>Take medications strictly as instructed by the physician.</li>' +
+                        '<li>Complete the full duration of treatment unless advised otherwise by doctor.</li>' +
+                        '<li>Store medicines in a cool, dry place away from direct sunlight & children.</li>' +
+                    '</ul>' +
+                '</div>' +
+
+                '<div class="footer-grid">' +
+                    '<div class="footer-col">' +
+                        '<div style="font-weight: 800; color: #475569; text-transform: uppercase; font-size: 10px;">Prescribing Physician</div>' +
+                        '<div style="margin-top: 40px; border-top: 1px solid #94a3b8; width: 80%; padding-top: 4px;">' +
+                            '<div style="font-weight: bold; color: #0f172a;">Dr. ' + data.doctor_name + '</div>' +
+                            '<div style="color: #64748b; font-size: 10px;">License No: REG-MD-' + data.visit_id + '</div>' +
+                            '<div style="color: #94a3b8; font-size: 10px; font-style: italic; margin-top: 2px;">Signature & Stamp: ________________</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="footer-col" style="text-align: right;">' +
+                        '<div style="font-weight: 800; color: #475569; text-transform: uppercase; font-size: 10px;">Pharmacy Dispensing Seal</div>' +
+                        '<div style="margin-top: 40px; border-top: 1px solid #94a3b8; width: 80%; margin-left: 20%; padding-top: 4px;">' +
+                            '<div style="font-weight: bold; color: #0f172a;">Licensed Pharmacist</div>' +
+                            '<div style="color: #64748b; font-size: 10px;">Dispense Date: ____ / ____ / 2026</div>' +
+                            '<div style="color: #94a3b8; font-size: 10px; font-style: italic; margin-top: 2px;">Verified & Dispensed: ________________</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+
+                '<div style="text-align: center; margin-top: 25px; padding-top: 10px; border-top: 1px solid #f1f5f9; font-size: 10px; color: #94a3b8;">' +
+                    'This official prescription is valid for 7 days from issue date. • Hope Care Medical System' +
+                '</div>' +
+            '</div>' +
+            '<script>window.onload = function() { window.print(); };<\/script>' +
+        '</body></html>';
+
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+    };
 
     // ──────────── Modal Management ────────────
 
