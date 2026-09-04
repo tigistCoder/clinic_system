@@ -16,7 +16,17 @@ class Visit extends Model
         return $this->belongsTo(Patient::class);
     }
 
+    public function doctor()
+    {
+        return $this->belongsTo(User::class, 'doctor_id');
+    }
+
     public function vitalSign()
+    {
+        return $this->hasOne(VitalSign::class);
+    }
+
+    public function vitalSigns()
     {
         return $this->hasOne(VitalSign::class);
     }

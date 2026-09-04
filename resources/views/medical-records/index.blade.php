@@ -21,7 +21,7 @@
         <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
             <div>
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">የሚጠበቁ የላብ ምርመራዎች</span>
-                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $stats['pending_lab_requests'] ?? 0 }}</h3>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ number_format($stats['pending_lab_requests'] ?? 0) }}</h3>
             </div>
             <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
                 <i data-lucide="clock" class="w-6 h-6"></i>
@@ -32,7 +32,7 @@
         <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
             <div>
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">የተጠናቀቁ የላብ ምርመራዎች</span>
-                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $stats['completed_lab_requests'] ?? 0 }}</h3>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ number_format($stats['completed_lab_requests'] ?? 0) }}</h3>
             </div>
             <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                 <i data-lucide="check-circle" class="w-6 h-6"></i>
@@ -43,7 +43,7 @@
         <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
             <div>
                 <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">አጠቃላይ የላብራቶሪ ምርመራዎች</span>
-                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ $stats['total_lab_tests'] ?? 0 }}</h3>
+                <h3 class="text-3xl font-bold text-slate-800 mt-2">{{ number_format($stats['total_lab_tests'] ?? 0) }}</h3>
             </div>
             <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
                 <i data-lucide="flask-conical" class="w-6 h-6"></i>
@@ -51,7 +51,7 @@
         </div>
     </div>
     @else
-    <div class="grid gap-4 md:grid-cols-4">
+    <div class="grid gap-6 md:grid-cols-2">
         <!-- Card 1: TOTAL PATIENTS -->
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div class="flex items-center justify-between">
@@ -61,7 +61,7 @@
                 </div>
             </div>
             <div class="mt-3 flex items-end justify-between">
-                <h3 class="text-3xl font-bold text-slate-900">{{ number_format($stats['total_patients']) }}</h3>
+                <h3 class="text-3xl font-bold text-slate-900">{{ number_format($stats['total_patients'] ?? 0) }}</h3>
                 <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">This Month</span>
             </div>
         </div>
@@ -75,36 +75,8 @@
                 </div>
             </div>
             <div class="mt-3 flex items-end justify-between">
-                <h3 class="text-3xl font-bold text-slate-900">{{ number_format($stats['total_visits']) }}</h3>
+                <h3 class="text-3xl font-bold text-slate-900">{{ number_format($stats['total_visits'] ?? 0) }}</h3>
                 <span class="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">This Month</span>
-            </div>
-        </div>
-
-        <!-- Card 3: TOTAL MONTHLY SOLD -->
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center justify-between">
-                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Monthly Sold</p>
-                <div class="rounded-xl bg-emerald-50 p-2 text-emerald-600">
-                    <i data-lucide="shopping-bag" class="h-5 w-5"></i>
-                </div>
-            </div>
-            <div class="mt-3 flex items-end justify-between">
-                <h3 class="text-3xl font-bold text-slate-900">{{ number_format($stats['total_monthly_sold']) }}</h3>
-                <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Units Dispensed</span>
-            </div>
-        </div>
-
-        <!-- Card 4: TOTAL LAB TESTS -->
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center justify-between">
-                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Total Lab Tests</p>
-                <div class="rounded-xl bg-violet-50 p-2 text-violet-600">
-                    <i data-lucide="flask-conical" class="h-5 w-5"></i>
-                </div>
-            </div>
-            <div class="mt-3 flex items-end justify-between">
-                <h3 class="text-3xl font-bold text-slate-900">{{ number_format($stats['total_lab_tests']) }}</h3>
-                <span class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">Orders This Month</span>
             </div>
         </div>
     </div>

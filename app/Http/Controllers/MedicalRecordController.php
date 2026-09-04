@@ -4,36 +4,31 @@ namespace App\Http\Controllers;
 
 use App\Models\Patient;
 use App\Models\Visit;
-use App\Models\Prescription;
 use App\Models\LabRequest;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class MedicalRecordController extends Controller
 {
     /**
-     * Display the Medical Records overview page with top summary metrics and clinical visit records.
+     * Display the Medical Records overview page with high-performance indexed summary metrics and clinical visit records.
      */
     public function index(Request $request)
     {
-        // Top Metrics
+        $monthStart = Carbon::now()->startOfMonth();
+        $monthEnd   = Carbon::now()->endOfMonth();
+
+        // High-performance indexed range count queries
         $stats = [
-            'total_patients'         => Patient::whereMonth('created_at', now()->month)
-                                        ->whereYear('created_at', now()->year)
-                                        ->count(),
-            'total_visits'           => Visit::whereMonth('created_at', now()->month)
-                                        ->whereYear('created_at', now()->year)
-                                        ->count(),
-            'total_monthly_sold'     => Prescription::where('status', 'dispensed')
-                                        ->whereMonth('updated_at', now()->month)
-                                        ->whereYear('updated_at', now()->year)
-                                        ->sum('quantity'),
-            'total_lab_tests'        => LabRequest::count(),
-            'pending_lab_requests'   => LabRequest::whereIn('status', ['pending', 'pending_payment', 'paid_pending_test'])->count(),
+            'total_patients'         => Patient::where('created_at', '>=', $monthStart)->where('created_at', '<=', $monthEnd)->count(),
+            'total_visits'           => Visit::where('created_at', '>=', $monthStart)->where('created_at', '<=', $monthEnd)->count(),
+            'pending_lab_requests'   => LabRequest::where('status', 'pending')->count(),
             'completed_lab_requests' => LabRequest::where('status', 'completed')->count(),
+            'total_lab_tests'        => LabRequest::count(),
         ];
 
-        // Clinical Visit Records Query
-        $query = Visit::with(['patient', 'consultation', 'vitalSign', 'labRequests', 'labResults', 'prescriptions']);
+        // Clinical Visit Records Query (lightweight eager load for table list)
+        $query = Visit::with('patient');
 
         // Search Filter (by patient name, phone number, or card number/ID)
         if ($request->filled('search')) {

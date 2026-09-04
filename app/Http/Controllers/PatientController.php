@@ -102,6 +102,7 @@ class PatientController extends Controller
             'visits.vitalSign',
             'visits.consultation',
             'visits.labRequests',
+            'visits.labResults',
             'visits.prescriptions.medicine'
         ]);
 

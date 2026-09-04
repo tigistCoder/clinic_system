@@ -163,22 +163,69 @@
                 </div>
 
                 @if($visit->vitalSign)
+                    @php
+                        $vs = $visit->vitalSign;
+                        $sysAbnormal = $vs->systolic_bp !== null && ($vs->systolic_bp > 140 || $vs->systolic_bp < 90);
+                        $diaAbnormal = $vs->diastolic_bp !== null && ($vs->diastolic_bp > 90 || $vs->diastolic_bp < 60);
+                        $bpAbnormal = $sysAbnormal || $diaAbnormal;
+                        $pulseAbnormal = $vs->pulse_rate !== null && ($vs->pulse_rate > 110 || $vs->pulse_rate < 50);
+                        $tempAbnormal = $vs->temperature !== null && ($vs->temperature > 38.5 || $vs->temperature < 35.0);
+                        $spo2Abnormal = $vs->spo2 !== null && ($vs->spo2 < 92);
+                        $hasAnyAbnormal = $bpAbnormal || $pulseAbnormal || $tempAbnormal || $spo2Abnormal;
+                    @endphp
+
+                    @if($hasAnyAbnormal)
+                        <div class="mb-4 rounded-2xl border border-rose-200 bg-rose-50/80 p-3 text-xs font-semibold text-rose-800 flex items-center justify-between shadow-sm">
+                            <span class="flex items-center gap-1.5">
+                                <span class="text-sm">⚠️</span> CRITICAL / ABNORMAL VITAL SIGNS DETECTED
+                            </span>
+                            <span class="rounded-full bg-rose-600 px-2.5 py-0.5 text-[10px] font-bold text-white uppercase">Critical Alert</span>
+                        </div>
+                    @endif
+
                     <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                        <div class="rounded-2xl bg-slate-50 p-3">
-                            <p class="text-xs font-semibold uppercase text-slate-400">Blood Pressure</p>
-                            <p class="mt-1 text-base font-bold text-slate-900">{{ $visit->vitalSign->systolic_bp ?? '-' }}/{{ $visit->vitalSign->diastolic_bp ?? '-' }} <span class="text-xs font-normal text-slate-500">mmHg</span></p>
+                        <!-- BP -->
+                        <div class="rounded-2xl p-3 transition {{ $bpAbnormal ? 'bg-rose-50 border border-rose-200 text-rose-900' : 'bg-slate-50' }}">
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs font-semibold uppercase {{ $bpAbnormal ? 'text-rose-700' : 'text-slate-400' }}">Blood Pressure</p>
+                                @if($bpAbnormal)
+                                    <span class="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700">Alert</span>
+                                @endif
+                            </div>
+                            <p class="mt-1 text-base font-bold {{ $bpAbnormal ? 'text-rose-900' : 'text-slate-900' }}">{{ $vs->systolic_bp ?? '-' }}/{{ $vs->diastolic_bp ?? '-' }} <span class="text-xs font-normal {{ $bpAbnormal ? 'text-rose-600' : 'text-slate-500' }}">mmHg</span></p>
                         </div>
-                        <div class="rounded-2xl bg-slate-50 p-3">
-                            <p class="text-xs font-semibold uppercase text-slate-400">Pulse Rate</p>
-                            <p class="mt-1 text-base font-bold text-slate-900">{{ $visit->vitalSign->pulse_rate ?? '-' }} <span class="text-xs font-normal text-slate-500">bpm</span></p>
+
+                        <!-- Pulse -->
+                        <div class="rounded-2xl p-3 transition {{ $pulseAbnormal ? 'bg-amber-50 border border-amber-200 text-amber-900' : 'bg-slate-50' }}">
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs font-semibold uppercase {{ $pulseAbnormal ? 'text-amber-700' : 'text-slate-400' }}">Pulse Rate</p>
+                                @if($pulseAbnormal)
+                                    <span class="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">Alert</span>
+                                @endif
+                            </div>
+                            <p class="mt-1 text-base font-bold {{ $pulseAbnormal ? 'text-amber-900' : 'text-slate-900' }}">{{ $vs->pulse_rate ?? '-' }} <span class="text-xs font-normal {{ $pulseAbnormal ? 'text-amber-600' : 'text-slate-500' }}">bpm</span></p>
                         </div>
-                        <div class="rounded-2xl bg-slate-50 p-3">
-                            <p class="text-xs font-semibold uppercase text-slate-400">Temperature</p>
-                            <p class="mt-1 text-base font-bold text-slate-900">{{ $visit->vitalSign->temperature ?? '-' }} <span class="text-xs font-normal text-slate-500">°C</span></p>
+
+                        <!-- Temp -->
+                        <div class="rounded-2xl p-3 transition {{ $tempAbnormal ? 'bg-rose-50 border border-rose-200 text-rose-900' : 'bg-slate-50' }}">
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs font-semibold uppercase {{ $tempAbnormal ? 'text-rose-700' : 'text-slate-400' }}">Temperature</p>
+                                @if($tempAbnormal)
+                                    <span class="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700">Fever/Hypo</span>
+                                @endif
+                            </div>
+                            <p class="mt-1 text-base font-bold {{ $tempAbnormal ? 'text-rose-900' : 'text-slate-900' }}">{{ $vs->temperature ?? '-' }} <span class="text-xs font-normal {{ $tempAbnormal ? 'text-rose-600' : 'text-slate-500' }}">°C</span></p>
                         </div>
-                        <div class="rounded-2xl bg-slate-50 p-3">
-                            <p class="text-xs font-semibold uppercase text-slate-400">SpO2</p>
-                            <p class="mt-1 text-base font-bold text-slate-900">{{ $visit->vitalSign->spo2 ?? '-' }} <span class="text-xs font-normal text-slate-500">%</span></p>
+
+                        <!-- SpO2 -->
+                        <div class="rounded-2xl p-3 transition {{ $spo2Abnormal ? 'bg-rose-50 border border-rose-200 text-rose-900' : 'bg-slate-50' }}">
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs font-semibold uppercase {{ $spo2Abnormal ? 'text-rose-700' : 'text-slate-400' }}">SpO2</p>
+                                @if($spo2Abnormal)
+                                    <span class="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700">Low O2</span>
+                                @endif
+                            </div>
+                            <p class="mt-1 text-base font-bold {{ $spo2Abnormal ? 'text-rose-900' : 'text-slate-900' }}">{{ $vs->spo2 ?? '-' }} <span class="text-xs font-normal {{ $spo2Abnormal ? 'text-rose-600' : 'text-slate-500' }}">%</span></p>
                         </div>
                     </div>
                 @else
@@ -491,46 +538,135 @@
                 <h3 class="text-lg font-bold text-slate-900">+ Add Vital Signs</h3>
                 <button type="button" onclick="closeModal('vitalModal')" class="text-slate-400 hover:text-slate-600">✕</button>
             </div>
-            <form data-url="{{ route('vitals.store', $visit) }}" data-modal="vitalModal" onsubmit="submitModalForm(event)" class="space-y-4">
+            <form 
+                data-url="{{ route('vitals.store', $visit) }}" 
+                data-modal="vitalModal" 
+                onsubmit="submitModalForm(event)" 
+                x-data="{
+                    systolic: '{{ $visit->vitalSign?->systolic_bp ?? '' }}',
+                    diastolic: '{{ $visit->vitalSign?->diastolic_bp ?? '' }}',
+                    pulse: '{{ $visit->vitalSign?->pulse_rate ?? '' }}',
+                    temp: '{{ $visit->vitalSign?->temperature ?? '' }}',
+                    spo2: '{{ $visit->vitalSign?->spo2 ?? '' }}',
+                    
+                    isSystolicAlert() { return this.systolic !== '' && (Number(this.systolic) > 140 || Number(this.systolic) < 90); },
+                    isDiastolicAlert() { return this.diastolic !== '' && (Number(this.diastolic) > 90 || Number(this.diastolic) < 60); },
+                    isPulseAlert() { return this.pulse !== '' && (Number(this.pulse) > 110 || Number(this.pulse) < 50); },
+                    isTempAlert() { return this.temp !== '' && (Number(this.temp) > 38.5 || Number(this.temp) < 35); },
+                    isSpo2Alert() { return this.spo2 !== '' && Number(this.spo2) < 92; },
+                    hasAnyAlert() { return this.isSystolicAlert() || this.isDiastolicAlert() || this.isPulseAlert() || this.isTempAlert() || this.isSpo2Alert(); }
+                }"
+                class="space-y-4"
+            >
+                <template x-if="hasAnyAlert()">
+                    <div class="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-800 flex items-center gap-2">
+                        <span>⚠️</span> Emergency / Critical vital signs detected. Form submission is permitted for clinical recording.
+                    </div>
+                </template>
+
                 <div class="grid gap-3 md:grid-cols-2">
                     <div>
                         <label class="mb-1 block text-xs font-semibold uppercase text-slate-600">Systolic BP (mmHg)</label>
-                        <input type="number" name="systolic_bp" value="{{ $visit->vitalSign?->systolic_bp ?? '' }}" placeholder="e.g. 120" min="40" max="250" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
+                        <input 
+                            type="number" 
+                            min="0"
+                            name="systolic_bp" 
+                            x-model="systolic"
+                            placeholder="e.g. 120" 
+                            :class="isSystolicAlert() ? 'border-rose-400 bg-rose-50/50 text-rose-900' : 'border-slate-200'"
+                            class="w-full rounded-xl border px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none transition"
+                        >
+                        <template x-if="isSystolicAlert()">
+                            <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">⚠️ Systolic (< 90 or > 140)</span>
+                        </template>
                         <p class="field-error text-rose-600 text-xs font-semibold mt-1" data-error="systolic_bp"></p>
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-semibold uppercase text-slate-600">Diastolic BP (mmHg)</label>
-                        <input type="number" name="diastolic_bp" value="{{ $visit->vitalSign?->diastolic_bp ?? '' }}" placeholder="e.g. 80" min="20" max="180" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
+                        <input 
+                            type="number" 
+                            min="0"
+                            name="diastolic_bp" 
+                            x-model="diastolic"
+                            placeholder="e.g. 80" 
+                            :class="isDiastolicAlert() ? 'border-rose-400 bg-rose-50/50 text-rose-900' : 'border-slate-200'"
+                            class="w-full rounded-xl border px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none transition"
+                        >
+                        <template x-if="isDiastolicAlert()">
+                            <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">⚠️ Diastolic (< 60 or > 90)</span>
+                        </template>
                         <p class="field-error text-rose-600 text-xs font-semibold mt-1" data-error="diastolic_bp"></p>
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-semibold uppercase text-slate-600">Pulse Rate (bpm)</label>
-                        <input type="number" name="pulse_rate" value="{{ $visit->vitalSign?->pulse_rate ?? '' }}" placeholder="e.g. 72" min="30" max="250" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
+                        <input 
+                            type="number" 
+                            min="0"
+                            name="pulse_rate" 
+                            x-model="pulse"
+                            placeholder="e.g. 72" 
+                            :class="isPulseAlert() ? 'border-amber-400 bg-amber-50/50 text-amber-900' : 'border-slate-200'"
+                            class="w-full rounded-xl border px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none transition"
+                        >
+                        <template x-if="isPulseAlert()">
+                            <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">⚠️ Pulse (< 50 or > 110)</span>
+                        </template>
                         <p class="field-error text-rose-600 text-xs font-semibold mt-1" data-error="pulse_rate"></p>
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-semibold uppercase text-slate-600">Respiratory Rate (breaths/min)</label>
-                        <input type="number" name="respiratory_rate" value="{{ $visit->vitalSign?->respiratory_rate ?? '' }}" placeholder="e.g. 16" min="8" max="60" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
+                        <input 
+                            type="number" 
+                            min="0"
+                            name="respiratory_rate" 
+                            value="{{ $visit->vitalSign?->respiratory_rate ?? '' }}" 
+                            placeholder="e.g. 16" 
+                            class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none transition"
+                        >
                         <p class="field-error text-rose-600 text-xs font-semibold mt-1" data-error="respiratory_rate"></p>
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-semibold uppercase text-slate-600">Temperature (°C)</label>
-                        <input type="number" step="0.1" name="temperature" value="{{ $visit->vitalSign?->temperature ?? '' }}" placeholder="e.g. 36.6" min="30" max="45" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
+                        <input 
+                            type="number" 
+                            step="0.1" 
+                            min="0"
+                            name="temperature" 
+                            x-model="temp"
+                            placeholder="e.g. 36.6" 
+                            :class="isTempAlert() ? 'border-rose-400 bg-rose-50/50 text-rose-900' : 'border-slate-200'"
+                            class="w-full rounded-xl border px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none transition"
+                        >
+                        <template x-if="isTempAlert()">
+                            <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">⚠️ Temp (< 35 or > 38.5°C)</span>
+                        </template>
                         <p class="field-error text-rose-600 text-xs font-semibold mt-1" data-error="temperature"></p>
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-semibold uppercase text-slate-600">SpO2 (%)</label>
-                        <input type="number" name="spo2" value="{{ $visit->vitalSign?->spo2 ?? '' }}" placeholder="e.g. 98" min="50" max="100" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
+                        <input 
+                            type="number" 
+                            min="0"
+                            max="100"
+                            name="spo2" 
+                            x-model="spo2"
+                            placeholder="e.g. 98" 
+                            :class="isSpo2Alert() ? 'border-rose-400 bg-rose-50/50 text-rose-900' : 'border-slate-200'"
+                            class="w-full rounded-xl border px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none transition"
+                        >
+                        <template x-if="isSpo2Alert()">
+                            <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">⚠️ Low SpO2 (< 92%)</span>
+                        </template>
                         <p class="field-error text-rose-600 text-xs font-semibold mt-1" data-error="spo2"></p>
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-semibold uppercase text-slate-600">Weight (kg)</label>
-                        <input type="number" step="0.1" name="weight" value="{{ $visit->vitalSign?->weight ?? '' }}" placeholder="e.g. 70.5" min="0.5" max="635" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
+                        <input type="number" step="0.1" min="0" name="weight" value="{{ $visit->vitalSign?->weight ?? '' }}" placeholder="e.g. 70.5" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
                         <p class="field-error text-rose-600 text-xs font-semibold mt-1" data-error="weight"></p>
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-semibold uppercase text-slate-600">Height (m/cm)</label>
-                        <input type="number" step="0.01" name="height" value="{{ $visit->vitalSign?->height ?? '' }}" placeholder="e.g. 1.75" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
+                        <input type="number" step="0.01" min="0" name="height" value="{{ $visit->vitalSign?->height ?? '' }}" placeholder="e.g. 1.75" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
                         <p class="field-error text-rose-600 text-xs font-semibold mt-1" data-error="height"></p>
                     </div>
                 </div>
@@ -679,18 +815,53 @@
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-semibold uppercase text-slate-600">Dosage</label>
-                        <input type="text" name="dosage" value="1 tablet daily" placeholder="e.g. 500mg, 1 tablet" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none">
+                        <select name="dosage" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none">
+                            <option value="1 tablet" selected>1 tablet</option>
+                            <option value="2 tablets">2 tablets</option>
+                            <option value="1 capsule">1 capsule</option>
+                            <option value="2 capsules">2 capsules</option>
+                            <option value="5 ml">5 ml</option>
+                            <option value="10 ml">10 ml</option>
+                            <option value="15 ml">15 ml</option>
+                            <option value="1 injection">1 injection</option>
+                            <option value="Apply topically">Apply topically</option>
+                            <option value="1-2 drops">1-2 drops</option>
+                        </select>
                         <p class="field-error text-rose-600 text-xs font-semibold mt-1" data-error="dosage"></p>
                     </div>
                 </div>
                 <div class="grid gap-3 md:grid-cols-2">
                     <div>
                         <label class="mb-1 block text-xs font-semibold uppercase text-slate-600">Frequency</label>
-                        <input type="text" name="frequency" value="Once daily" placeholder="e.g. Twice daily, 8 hours" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none">
+                        <select name="frequency" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none">
+                            <option value="Once daily (OD)" selected>Once daily (OD)</option>
+                            <option value="Twice daily (BID)">Twice daily (BID)</option>
+                            <option value="Three times daily (TID)">Three times daily (TID)</option>
+                            <option value="Four times daily (QID)">Four times daily (QID)</option>
+                            <option value="Every 4 hours">Every 4 hours</option>
+                            <option value="Every 6 hours">Every 6 hours</option>
+                            <option value="Every 8 hours">Every 8 hours</option>
+                            <option value="Every 12 hours">Every 12 hours</option>
+                            <option value="As needed (PRN)">As needed (PRN)</option>
+                            <option value="Stat">Stat</option>
+                        </select>
+                        <p class="field-error text-rose-600 text-xs font-semibold mt-1" data-error="frequency"></p>
                     </div>
                     <div>
-                        <label class="mb-1 block text-xs font-semibold uppercase text-slate-600">Duration (Days)</label>
-                        <input type="text" name="duration" value="7 days" placeholder="e.g. 5 days, 7 days" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none">
+                        <label class="mb-1 block text-xs font-semibold uppercase text-slate-600">Duration</label>
+                        <select name="duration" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none">
+                            <option value="1 day">1 day</option>
+                            <option value="3 days">3 days</option>
+                            <option value="5 days">5 days</option>
+                            <option value="7 days" selected>7 days</option>
+                            <option value="10 days">10 days</option>
+                            <option value="14 days">14 days</option>
+                            <option value="21 days">21 days</option>
+                            <option value="30 days">30 days</option>
+                            <option value="60 days">60 days</option>
+                            <option value="90 days">90 days</option>
+                            <option value="Single dose">Single dose</option>
+                        </select>
                         <p class="field-error text-rose-600 text-xs font-semibold mt-1" data-error="duration"></p>
                     </div>
                 </div>

@@ -27,30 +27,42 @@ class VitalSignController extends Controller
     public function store(Request $request, Visit $visit)
     {
         $validated = $request->validate([
-            'systolic_bp'      => 'nullable|numeric|between:40,250',
-            'diastolic_bp'     => 'nullable|numeric|between:20,180',
-            'pulse_rate'       => 'nullable|numeric|between:30,250',
-            'respiratory_rate' => 'nullable|numeric|between:8,60',
-            'temperature'      => 'nullable|numeric|between:30,45',
-            'spo2'             => 'nullable|numeric|between:50,100',
-            'weight'           => 'nullable|numeric|min:0.5|max:635',
-            'height'           => 'nullable|numeric|between:0.546,2.74',
+            'temperature'       => 'nullable|numeric|min:0',
+            'systolic_bp'       => 'nullable|numeric|min:0',
+            'diastolic_bp'      => 'nullable|numeric|min:0',
+            'pulse_rate'        => 'nullable|numeric|min:0',
+            'respiratory_rate'  => 'nullable|numeric|min:0',
+            'weight'            => 'nullable|numeric|min:0',
+            'height'            => 'nullable|numeric|min:0',
+            'spo2'              => 'nullable|numeric|min:0|max:100',
+            'oxygen_saturation' => 'nullable|numeric|min:0|max:100',
         ], [
-            'systolic_bp.between'      => 'Systolic BP must be between 40 and 250 mmHg.',
-            'systolic_bp.numeric'      => 'Systolic BP must be between 40 and 250 mmHg.',
-            'diastolic_bp.between'     => 'Diastolic BP must be between 20 and 180 mmHg.',
-            'diastolic_bp.numeric'     => 'Diastolic BP must be between 20 and 180 mmHg.',
-            'pulse_rate.between'       => 'Pulse rate must be between 30 and 250 bpm.',
-            'pulse_rate.numeric'       => 'Pulse rate must be between 30 and 250 bpm.',
-            'respiratory_rate.between' => 'Respiratory rate must be between 8 and 60 bpm.',
-            'respiratory_rate.numeric' => 'Respiratory rate must be between 8 and 60 bpm.',
-            'temperature.between'      => 'Temperature must be between 30°C and 45°C.',
-            'temperature.numeric'      => 'Temperature must be between 30°C and 45°C.',
-            'spo2.between'             => 'SpO2 percentage must be between 50% and 100%.',
-            'spo2.numeric'             => 'SpO2 percentage must be between 50% and 100%.',
-            'weight.max'               => 'Weight cannot exceed 635 kg.',
-            'weight.numeric'           => 'Weight cannot exceed 635 kg.',
+            'temperature.numeric'       => 'Temperature must be a valid number.',
+            'temperature.min'           => 'Temperature cannot be negative.',
+            'systolic_bp.numeric'       => 'Systolic BP must be a valid number.',
+            'systolic_bp.min'           => 'Systolic BP cannot be negative.',
+            'diastolic_bp.numeric'      => 'Diastolic BP must be a valid number.',
+            'diastolic_bp.min'          => 'Diastolic BP cannot be negative.',
+            'pulse_rate.numeric'        => 'Pulse rate must be a valid number.',
+            'pulse_rate.min'            => 'Pulse rate cannot be negative.',
+            'respiratory_rate.numeric'  => 'Respiratory rate must be a valid number.',
+            'respiratory_rate.min'      => 'Respiratory rate cannot be negative.',
+            'weight.numeric'            => 'Weight must be a valid number.',
+            'weight.min'                => 'Weight cannot be negative.',
+            'height.numeric'            => 'Height must be a valid number.',
+            'height.min'                => 'Height cannot be negative.',
+            'spo2.numeric'              => 'SpO2 must be a valid percentage.',
+            'spo2.min'                  => 'SpO2 cannot be negative.',
+            'spo2.max'                  => 'SpO2 percentage cannot exceed 100%.',
+            'oxygen_saturation.numeric' => 'Oxygen saturation must be a valid percentage.',
+            'oxygen_saturation.min'     => 'Oxygen saturation cannot be negative.',
+            'oxygen_saturation.max'     => 'Oxygen saturation percentage cannot exceed 100%.',
         ]);
+
+        if (isset($validated['oxygen_saturation']) && !isset($validated['spo2'])) {
+            $validated['spo2'] = $validated['oxygen_saturation'];
+        }
+        unset($validated['oxygen_saturation']);
 
         try {
             DB::beginTransaction();
