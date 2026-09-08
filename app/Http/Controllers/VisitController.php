@@ -29,12 +29,23 @@ class VisitController extends Controller
             ->with('success', 'Visit created successfully.');
     }
 
-    public function show(Visit $visit)
+    public function show($id)
     {
-        $visit->load(['patient', 'vitalSign', 'consultation', 'labRequests', 'labResults.technician', 'prescriptions.medicine']);
-        $visit->checkAndUpdateCompletionStatus();
+        $visit = Visit::with([
+            'patient',
+            'vitalSign',
+            'vitalSigns',
+            'consultation',
+            'labRequests',
+            'labResults.technician',
+            'prescriptions.medicine'
+        ])->findOrFail($id);
 
+        $doctors = \App\Models\User::where('role', 'doctor')
+            ->withCount(['visits as active_queue_count' => fn($q) => $q->whereIn('visit_status', ['in_progress', 'doctor_queue', 'in_consultation'])])
+            ->get(['id', 'name']);
         $medicines = Medicine::with('purchases')->orderBy('name')->get();
-        return view('visits.show', compact('visit', 'medicines'));
+
+        return view('visits.show', compact('visit', 'medicines', 'doctors'));
     }
 }

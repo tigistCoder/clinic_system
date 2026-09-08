@@ -53,4 +53,12 @@ class User extends Authenticatable
 
         return $this->role === $roles;
     }
+
+    /**
+     * Visits assigned to this doctor.
+     */
+    public function visits()
+    {
+        return $this->hasMany(Visit::class, 'doctor_id');
+    }
 }

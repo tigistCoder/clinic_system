@@ -51,7 +51,13 @@ class PatientController extends Controller
         $totalPatients = Patient::count();
         $todayVisits = Visit::whereDate('created_at', now()->today())->count();
 
-        return view('patients.index', compact('patients', 'totalPatients', 'todayVisits')); 
+        $assignedVisits = Visit::with('patient')
+            ->where('doctor_id', auth()->id())
+            ->whereIn('visit_status', ['in_progress', 'doctor_queue', 'in_consultation'])
+            ->latest()
+            ->get();
+
+        return view('patients.index', compact('patients', 'totalPatients', 'todayVisits', 'assignedVisits')); 
     }
 
     public function store(Request $request)

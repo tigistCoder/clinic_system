@@ -57,6 +57,10 @@ class Visit extends Model
      */
     public function checkAndUpdateCompletionStatus(): bool
     {
+        if (in_array($this->visit_status, ['triage', 'doctor_queue'])) {
+            return false;
+        }
+
         $hasPendingPrescriptions = Prescription::where('visit_id', $this->id)
             ->where('status', '!=', 'dispensed')
             ->exists();
@@ -69,7 +73,7 @@ class Visit extends Model
 
         $targetStatus = (!$hasPendingPrescriptions && !$hasPendingLab && $hasDiagnosis) ? 'completed' : 'in_progress';
 
-        if ($this->visit_status !== $targetStatus) {
+        if ($this->visit_status !== $targetStatus && !in_array($this->visit_status, ['triage', 'doctor_queue'])) {
             $this->update(['visit_status' => $targetStatus]);
         }
 

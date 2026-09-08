@@ -36,6 +36,8 @@ class VitalSignController extends Controller
             'height'            => 'nullable|numeric|min:0',
             'spo2'              => 'nullable|numeric|min:0|max:100',
             'oxygen_saturation' => 'nullable|numeric|min:0|max:100',
+            'doctor_id'         => 'nullable|exists:users,id',
+            'urgency_status'    => 'nullable|in:normal,emergency',
         ], [
             'temperature.numeric'       => 'Temperature must be a valid number.',
             'temperature.min'           => 'Temperature cannot be negative.',
@@ -59,6 +61,10 @@ class VitalSignController extends Controller
             'oxygen_saturation.max'     => 'Oxygen saturation percentage cannot exceed 100%.',
         ]);
 
+        $doctorId = $validated['doctor_id'] ?? null;
+        $urgencyStatus = $validated['urgency_status'] ?? null;
+        unset($validated['doctor_id'], $validated['urgency_status']);
+
         if (isset($validated['oxygen_saturation']) && !isset($validated['spo2'])) {
             $validated['spo2'] = $validated['oxygen_saturation'];
         }
@@ -74,17 +80,27 @@ class VitalSignController extends Controller
                 array_merge($validated, ['nurse_id' => $nurseId])
             );
 
+            $visitUpdate = [
+                'visit_status' => 'doctor_queue',
+            ];
+            if ($doctorId) {
+                $visitUpdate['doctor_id'] = $doctorId;
+            }
+            if ($urgencyStatus) {
+                $visitUpdate['urgency_status'] = $urgencyStatus;
+            }
+            $visit->update($visitUpdate);
+
             DB::commit();
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Vital signs saved successfully!',
+                    'message' => 'Assigned to doctor queue.',
                 ]);
             }
 
-            return redirect()->route('visits.show', $visit)
-                             ->with('success', 'Vital signs saved successfully!');
+            return redirect()->back()->with('success', 'Assigned to doctor queue.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Vital signs store failed for Visit #{$visit->id}: " . $e->getMessage());

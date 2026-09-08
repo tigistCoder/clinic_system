@@ -35,11 +35,11 @@
     $rxData = [
         'visit_id' => $visit->id,
         'date' => date('M d, Y - h:i A'),
-        'patient_name' => $visit->patient->name ?? 'N/A',
+        'patient_name' => $visit->patient->full_name ?? $visit->patient->name ?? 'N/A',
         'card_number' => $visit->patient->card_number ?? '-',
         'gender' => ucfirst($visit->patient->gender ?? '-'),
         'age' => $visit->patient->age ?? '-',
-        'phone' => $visit->patient->phone ?? '-',
+        'phone' => $visit->patient->phone_number ?? $visit->patient->phone ?? '-',
         'doctor_name' => $visit->consultation?->doctor?->name ?? auth()->user()?->name ?? 'Attending Doctor',
         'diagnosis' => $visit->consultation?->final_dx ?? $visit->consultation?->provisional_dx ?? 'General Medical Consultation',
         'vitals' => $visit->vitalSign ? [
@@ -710,10 +710,34 @@
                         <input type="number" step="0.01" min="0" name="height" value="{{ $visit->vitalSign?->height ?? '' }}" placeholder="e.g. 1.75" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
                         <p class="field-error text-rose-600 text-xs font-semibold mt-1" data-error="height"></p>
                     </div>
+
+                    {{-- Doctor Assignment & Urgency Selection --}}
+                    <div class="col-span-1 md:col-span-2 grid gap-3 md:grid-cols-2 rounded-2xl bg-slate-50 p-3.5 border border-slate-200/80">
+                        <div>
+                            <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-700">Assign Doctor *</label>
+                            <select name="doctor_id" required class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:outline-none transition">
+                                <option value="">-- Select Doctor --</option>
+                                @foreach($doctors as $doc)
+                                    <option value="{{ $doc->id }}" {{ ($visit->doctor_id == $doc->id) ? 'selected' : '' }}>
+                                        Dr. {{ $doc->name }} ({{ $doc->active_queue_count }} waiting{{ $doc->active_queue_count === 0 ? ' - Free' : '' }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="field-error text-rose-600 text-xs font-semibold mt-1" data-error="doctor_id"></p>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-700">Urgency Level</label>
+                            <select name="urgency_status" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:outline-none transition">
+                                <option value="normal" {{ ($visit->urgency_status === 'normal') ? 'selected' : '' }}>Normal Priority</option>
+                                <option value="emergency" {{ ($visit->urgency_status === 'emergency') ? 'selected' : '' }}>🚨 Emergency Priority</option>
+                            </select>
+                            <p class="field-error text-rose-600 text-xs font-semibold mt-1" data-error="urgency_status"></p>
+                        </div>
+                    </div>
                 </div>
                 <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
                     <button type="button" onclick="closeModal('vitalModal')" class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
-                    <button type="submit" class="rounded-xl bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Save Vitals</button>
+                    <button type="submit" class="rounded-xl bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Save & Send to Doctor</button>
                 </div>
             </form>
         </div>

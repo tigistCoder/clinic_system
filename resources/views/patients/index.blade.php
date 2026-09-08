@@ -78,7 +78,55 @@
         </form>
     </div>
 
-    <!-- Patients Table -->
+    @if(auth()->user()?->hasRole('doctor'))
+    <!-- Doctor Assigned Queue Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+        <div class="p-4 border-b border-slate-100 bg-amber-50/60 flex items-center justify-between">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <span>🩺</span> Your Assigned Doctor Queue ({{ $assignedVisits->count() }} Waiting)
+            </h3>
+            <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                Active Doctor Queue
+            </span>
+        </div>
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-100 text-slate-400 text-xs uppercase font-semibold">
+                    <th class="p-4">Card No.</th>
+                    <th class="p-4">Patient Name</th>
+                    <th class="p-4">Age / Sex</th>
+                    <th class="p-4">Urgency Status</th>
+                    <th class="p-4 text-right">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-sm">
+                @forelse($assignedVisits as $visit)
+                <tr class="hover:bg-slate-50/50 transition">
+                    <td class="p-4 font-bold text-blue-600">{{ $visit->patient->card_number ?? ('CARD-' . $visit->patient_id) }}</td>
+                    <td class="p-4 font-semibold text-slate-800">{{ $visit->patient->name ?? $visit->patient->full_name }}</td>
+                    <td class="p-4 text-slate-600">{{ $visit->patient->age }} Yrs / {{ ucfirst($visit->patient->gender) }}</td>
+                    <td class="p-4">
+                        <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $visit->urgency_status === 'emergency' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600' }}">
+                            {{ ucfirst($visit->urgency_status ?? 'normal') }}
+                        </span>
+                    </td>
+                    <td class="p-4 text-right">
+                        <a href="{{ route('visits.show', $visit->id) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition shadow-sm">
+                            <i data-lucide="stethoscope" class="w-3.5 h-3.5"></i>
+                            Attend Patient
+                        </a>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="5" class="p-8 text-center text-slate-400 font-medium">No patients waiting in your queue.</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    @else
+    <!-- Patients Table (General Staff / Admin) -->
     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <table class="w-full text-left border-collapse">
             <thead>
@@ -151,6 +199,7 @@
             {{ $patients->links() }}
         </div>
     </div>
+    @endif
 
     <!-- DIALOGUE BOX / MODAL (FOR NEW PATIENT) -->
     @if(!auth()->user()?->hasRole(['nurse', 'doctor', 'lab', 'lab_tech', 'pharmacy', 'pharmacist']))
